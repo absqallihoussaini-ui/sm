@@ -13,9 +13,14 @@ declare module 'better-sqlite3' {
     lastInsertRowid?: number;
   }
 
-  function Database(filename: string, options?: any): Database;
+  interface DatabaseConstructor {
+    new (filename: string, options?: any): Database;
+  }
+
+  const Database: DatabaseConstructor;
   export default Database;
 }
+
 
 
 
