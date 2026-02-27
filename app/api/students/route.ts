@@ -14,7 +14,7 @@ export async function GET() {
       );
     }
 
-    const students = getStudents();
+    const students = await getStudents();
     return NextResponse.json(students);
   } catch (error) {
     console.error('Error fetching students:', error);
@@ -46,16 +46,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = createStudent(data);
+    const result = await createStudent(data);
     
     return NextResponse.json(
-      { id: result.lastInsertRowid, ...data },
+      result,
       { status: 201 }
     );
   } catch (error: any) {
     console.error('Error creating student:', error);
     
-    if (error.message.includes('UNIQUE constraint failed')) {
+    if (error.message.includes('duplicate key') || error.code === '23505') {
       return NextResponse.json(
         { error: 'Email or enrollment number already exists' },
         { status: 400 }
