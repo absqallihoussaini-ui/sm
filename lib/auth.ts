@@ -1,7 +1,25 @@
-import NextAuth, { type NextAuthOptions } from 'next-auth';
+import NextAuth, { type NextAuthOptions, type Session } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { getUserByEmail } from './db';
+import { JWT } from 'next-auth/jwt';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id?: string;
+      email?: string;
+      name?: string;
+      image?: string;
+    };
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
