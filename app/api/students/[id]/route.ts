@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const student = getStudentById(parseInt(id));
+    const student = await getStudentById(parseInt(id));
     
     if (!student) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function PUT(
       );
     }
 
-    const student = getStudentById(parseInt(id));
+    const student = await getStudentById(parseInt(id));
     
     if (!student) {
       return NextResponse.json(
@@ -62,7 +62,7 @@ export async function PUT(
     }
 
     const data = await request.json();
-    updateStudent(parseInt(id), data);
+    await updateStudent(parseInt(id), data);
 
     return NextResponse.json({ ...student, ...data });
   } catch (error: any) {
@@ -97,7 +97,7 @@ export async function DELETE(
       );
     }
 
-    const student = getStudentById(parseInt(id));
+    const student = await getStudentById(parseInt(id));
     
     if (!student) {
       return NextResponse.json(
@@ -106,7 +106,7 @@ export async function DELETE(
       );
     }
 
-    deleteStudent(parseInt(id));
+    await deleteStudent(parseInt(id));
 
     return NextResponse.json({ message: 'Student deleted successfully' });
   } catch (error) {
