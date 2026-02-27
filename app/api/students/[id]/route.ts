@@ -5,9 +5,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session) {
@@ -17,7 +18,7 @@ export async function GET(
       );
     }
 
-    const student = getStudentById(parseInt(params.id));
+    const student = getStudentById(parseInt(id));
     
     if (!student) {
       return NextResponse.json(
@@ -38,9 +39,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session) {
@@ -50,7 +52,7 @@ export async function PUT(
       );
     }
 
-    const student = getStudentById(parseInt(params.id));
+    const student = getStudentById(parseInt(id));
     
     if (!student) {
       return NextResponse.json(
@@ -60,7 +62,7 @@ export async function PUT(
     }
 
     const data = await request.json();
-    updateStudent(parseInt(params.id), data);
+    updateStudent(parseInt(id), data);
 
     return NextResponse.json({ ...student, ...data });
   } catch (error: any) {
@@ -82,9 +84,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session) {
@@ -94,7 +97,7 @@ export async function DELETE(
       );
     }
 
-    const student = getStudentById(parseInt(params.id));
+    const student = getStudentById(parseInt(id));
     
     if (!student) {
       return NextResponse.json(
@@ -103,7 +106,7 @@ export async function DELETE(
       );
     }
 
-    deleteStudent(parseInt(params.id));
+    deleteStudent(parseInt(id));
 
     return NextResponse.json({ message: 'Student deleted successfully' });
   } catch (error) {
