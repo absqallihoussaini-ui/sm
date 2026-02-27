@@ -12,9 +12,9 @@ try {
   // Directory might already exist
 }
 
-let db: Database.Database | null = null;
+let db: ReturnType<typeof Database> | null = null;
 
-export function getDb(): Database.Database {
+export function getDb(): ReturnType<typeof Database> {
   if (!db) {
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
