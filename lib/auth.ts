@@ -34,7 +34,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password required');
         }
 
-        const user = await getUserByEmail(credentials.email);
+        const user = getUserByEmail(credentials.email);
 
         if (!user) {
           throw new Error('Invalid email or password');

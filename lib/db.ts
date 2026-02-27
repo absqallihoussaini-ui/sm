@@ -1,45 +1,32 @@
-import { createClient } from '@libsql/client';
+import Database from 'better-sqlite3';
+import path from 'path';
 import bcrypt from 'bcryptjs';
 
-interface DbRow {
-  id?: number;
-  email?: string;
-  password?: string;
-  name?: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  enrollmentNumber?: string;
-  dateOfBirth?: string;
-  address?: string;
-  createdAt?: string;
-  updatedAt?: string;
+const dbPath = path.join(process.cwd(), 'data', 'students.db');
+
+// Ensure data directory exists
+import { mkdirSync } from 'fs';
+try {
+  mkdirSync(path.dirname(dbPath), { recursive: true });
+} catch (error) {
+  // Directory might already exist
 }
 
-let db: ReturnType<typeof createClient> | null = null;
+let db: Database | null = null;
 
-function getDb() {
+export function getDb(): Database {
   if (!db) {
-    const dbUrl = process.env.DATABASE_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
-
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL environment variable is not set');
-    }
-
-    db = createClient({
-      url: dbUrl,
-      authToken: authToken
-    });
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
   }
   return db;
 }
 
-export async function initializeDb() {
+export function initializeDb() {
   const database = getDb();
 
   // Create users table
-  await database.execute(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
@@ -50,7 +37,7 @@ export async function initializeDb() {
   `);
 
   // Create students table
-  await database.execute(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS students (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       firstName TEXT NOT NULL,
@@ -66,36 +53,30 @@ export async function initializeDb() {
   `);
 
   // Create default admin user if it doesn't exist
-  const adminUserResult = await database.execute({
-    sql: 'SELECT * FROM users WHERE email = ?',
-    args: ['admin@example.com']
-  });
-
-  if (!adminUserResult.rows || adminUserResult.rows.length === 0) {
+  const adminUser = database.prepare('SELECT * FROM users WHERE email = ?').get('admin@example.com');
+  if (!adminUser) {
     const hashedPassword = bcrypt.hashSync('admin123', 10);
-    await database.execute({
-      sql: `INSERT INTO users (email, password, name) VALUES (?, ?, ?)`,
-      args: ['admin@example.com', hashedPassword, 'Administrator']
-    });
+    database.prepare(`
+      INSERT INTO users (email, password, name) 
+      VALUES (?, ?, ?)
+    `).run('admin@example.com', hashedPassword, 'Administrator');
   }
 }
 
-export async function getStudents() {
+// Initialize database on import
+initializeDb();
+
+export function getStudents() {
   const database = getDb();
-  const result = await database.execute('SELECT * FROM students ORDER BY createdAt DESC');
-  return result.rows || [];
+  return database.prepare('SELECT * FROM students ORDER BY createdAt DESC').all();
 }
 
-export async function getStudentById(id: number) {
+export function getStudentById(id: number) {
   const database = getDb();
-  const result = await database.execute({
-    sql: 'SELECT * FROM students WHERE id = ?',
-    args: [id]
-  });
-  return result.rows?.[0] || null;
+  return database.prepare('SELECT * FROM students WHERE id = ?').get(id);
 }
 
-export async function createStudent(data: {
+export function createStudent(data: {
   firstName: string;
   lastName: string;
   email: string;
@@ -105,24 +86,21 @@ export async function createStudent(data: {
   address?: string;
 }) {
   const database = getDb();
-  return await database.execute({
-    sql: `
-      INSERT INTO students (firstName, lastName, email, phone, enrollmentNumber, dateOfBirth, address)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `,
-    args: [
-      data.firstName,
-      data.lastName,
-      data.email,
-      data.phone || null,
-      data.enrollmentNumber,
-      data.dateOfBirth || null,
-      data.address || null
-    ]
-  });
+  return database.prepare(`
+    INSERT INTO students (firstName, lastName, email, phone, enrollmentNumber, dateOfBirth, address)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    data.firstName,
+    data.lastName,
+    data.email,
+    data.phone || null,
+    data.enrollmentNumber,
+    data.dateOfBirth || null,
+    data.address || null
+  );
 }
 
-export async function updateStudent(id: number, data: Partial<{
+export function updateStudent(id: number, data: Partial<{
   firstName: string;
   lastName: string;
   email: string;
@@ -143,25 +121,17 @@ export async function updateStudent(id: number, data: Partial<{
   updates.push('updatedAt = CURRENT_TIMESTAMP');
   values.push(id);
 
-  return await database.execute({
-    sql: `UPDATE students SET ${updates.join(', ')} WHERE id = ?`,
-    args: values
-  });
+  return database.prepare(`
+    UPDATE students SET ${updates.join(', ')} WHERE id = ?
+  `).run(...values);
 }
 
-export async function deleteStudent(id: number) {
+export function deleteStudent(id: number) {
   const database = getDb();
-  return await database.execute({
-    sql: 'DELETE FROM students WHERE id = ?',
-    args: [id]
-  });
+  return database.prepare('DELETE FROM students WHERE id = ?').run(id);
 }
 
-export async function getUserByEmail(email: string) {
+export function getUserByEmail(email: string) {
   const database = getDb();
-  const result = await database.execute({
-    sql: 'SELECT * FROM users WHERE email = ?',
-    args: [email]
-  });
-  return result.rows?.[0] || null;
+  return database.prepare('SELECT * FROM users WHERE email = ?').get(email);
 }

@@ -14,7 +14,7 @@ export async function GET() {
       );
     }
 
-    const students = await getStudents();
+    const students = getStudents();
     return NextResponse.json(students);
   } catch (error) {
     console.error('Error fetching students:', error);
@@ -46,10 +46,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await createStudent(data);
+    const result = createStudent(data);
     
     return NextResponse.json(
-      { id: result.rowsAffected, ...data },
+      { id: result.lastInsertRowid, ...data },
       { status: 201 }
     );
   } catch (error: any) {

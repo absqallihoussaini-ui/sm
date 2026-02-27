@@ -4,9 +4,13 @@
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "framework": "nextjs",
+  "env": {
+    "DATABASE_URL": "@database_url"
+  },
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "memory": 512
     }
   }
 }
